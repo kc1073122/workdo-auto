@@ -1,0 +1,10 @@
+[Unit]
+Description=WorkDo Clock-In Timer (Mon-Fri 09:00 Taipei Time)
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 09:00:00
+Persistent=true
+Unit=workdo-clockin.service
+
+[Install]
+WantedBy=timers.target

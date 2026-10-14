@@ -1,0 +1,10 @@
+[Unit]
+Description=WorkDo Clock-Out Timer (Mon-Fri 18:00 Taipei Time)
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 18:00:00
+Persistent=true
+Unit=workdo-clockout.service
+
+[Install]
+WantedBy=timers.target

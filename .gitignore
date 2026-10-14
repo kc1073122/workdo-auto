@@ -1,0 +1,37 @@
+# === 虛擬環境 ===
+venv/
+ENV/
+env/
+.venv/
+
+# === 機密設定 ===
+.env
+.env.*
+*.env
+!.env.example
+
+# === Python 快取與編譯檔 ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# === 日誌與系統暫存 ===
+logs/
+*.log
+*.log.*
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+
+# === 作業系統與編輯器設定 ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.cursor/
