@@ -81,7 +81,7 @@ def compute_scheduled_clock_out(actual_clock_in_str: Optional[str]) -> Tuple[dat
         )
         return target_clock_out, delay_min
 
-    logger.info(f"今日上班打卡正常或提早 ({actual_clock_in.strftime('%H:%M:%S')})，下班時間維持預設 {Config.CLOCK_OUT_TIME}。")
+    logger.debug(f"今日上班打卡正常或提早 ({actual_clock_in.strftime('%H:%M:%S')})，下班時間維持預設 {Config.CLOCK_OUT_TIME}。")
     return base_clock_out, 0
 
 def wait_until_target_time(target_time: datetime, max_wait_seconds: int = 7200) -> None:
@@ -100,5 +100,5 @@ def wait_until_target_time(target_time: datetime, max_wait_seconds: int = 7200) 
         logger.warning(f"等待時間 ({wait_seconds:.0f}s) 超過上限 ({max_wait_seconds}s)，調整為上限。")
         wait_seconds = max_wait_seconds
 
-    logger.info(f"等待中...預計於 {target_time.strftime('%H:%M:%S')} 執行打卡 (尚需等待 {int(wait_seconds)} 秒)")
+    logger.debug(f"等待中...預計於 {target_time.strftime('%H:%M:%S')} 執行打卡 (尚需等待 {int(wait_seconds)} 秒)")
     time.sleep(wait_seconds)

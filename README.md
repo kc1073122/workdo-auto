@@ -10,7 +10,7 @@
 2. **台北市政府 GPS 定位**：
    - 座標格式：`POINT (121.564451 25.037517)`
    - 地址：`台北市信義區市府路1號`
-3. **工作日排程 (Systemd Timers / Crontab)**：
+3. **工作日排程 (Systemd Timers)**：
    - 上班打卡：工作日（週一至週五）`09:00`
    - 下班打卡：工作日（週一至週五）`18:00`
 4. **彈性下班支援**：若早上上班打卡延遲（例如 09:05），下班時間自動等比例順延（18:05），提早打卡則不提前。
@@ -36,8 +36,7 @@ workdo-auto/
 ├── main.py                   # 命令行工具主入口 (支援 aliases)
 ├── requirements.txt          # Python 依賴清單
 ├── deploy.sh                 # 一鍵部署至樹莓派 (192.168.68.65)
-├── setup_systemd.sh          # Systemd 服務/定時器安裝腳本 (預設推薦)
-├── setup_cron.sh             # Crontab 自動排程安裝腳本 (備用)
+├── setup_systemd.sh          # Systemd 服務/定時器安裝腳本
 ├── tests/                    # 單元測試套件 (27+ tests)
 │   ├── test_config.py
 │   ├── test_notifier.py
@@ -59,7 +58,7 @@ workdo-auto/
 在本地端（Mac）的 `~/Documents/codes/workdo-auto` 目錄下執行：
 
 ```bash
-chmod +x deploy.sh setup_systemd.sh setup_cron.sh main.py
+chmod +x deploy.sh setup_systemd.sh main.py
 ./deploy.sh 192.168.68.65 bot
 ```
 

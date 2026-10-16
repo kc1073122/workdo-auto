@@ -26,7 +26,8 @@ if [ "$MODE" == "1" ]; then
     echo "=============================================="
     echo "Systemd Timers 安裝並啟動完成！"
     echo "查看定時器排程: systemctl --user list-timers | grep workdo"
-    echo "查看執行日誌: tail -f $DIR/logs/systemd.log"
+    echo "查看執行日誌: journalctl --user -u workdo-clockin -u workdo-clockout -f"
+    echo "查看程式日誌: tail -f $DIR/logs/workdo.log"
     echo "=============================================="
 else
     echo "正在安裝 Systemd Daemon (常駐模式)..."

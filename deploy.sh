@@ -42,7 +42,7 @@ fi
 echo "正在安裝/更新 Python 套件..."
 ./venv/bin/pip install --upgrade pip --quiet
 ./venv/bin/pip install -r requirements.txt --quiet
-chmod +x main.py setup_cron.sh setup_systemd.sh
+chmod +x main.py setup_systemd.sh
 EOF
 
 # 5. 檢查 .env 設定檔與安裝 Systemd Timers 排程

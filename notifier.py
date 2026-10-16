@@ -11,33 +11,6 @@ from config import Config
 Config.LOG_DIR.mkdir(parents=True, exist_ok=True)
 log_file = Config.LOG_DIR / "workdo.log"
 
-logger = logging.getLogger("WorkDoAuto")
-logger.setLevel(logging.DEBUG)
-
-# Standard Log Formatter
-formatter = logging.Formatter(
-    fmt="[%(asctime)s] [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-
-# Console handler (DEBUG and above)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
-
-# File handler (Rotating: 5MB x 5 backups)
-file_handler = RotatingFileHandler(
-    log_file,
-    maxBytes=5 * 1024 * 1024,
-    backupCount=5,
-    encoding="utf-8"
-)
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
-
 class WebhookPushHandler(logging.Handler):
     """
     推播處理器：
@@ -104,9 +77,37 @@ class WebhookPushHandler(logging.Handler):
                 pass
 
 
-# 掛載推播處理器 (預設門檻為 INFO，DEBUG 不推播)
-webhook_handler = WebhookPushHandler(level=logging.INFO)
-logger.addHandler(webhook_handler)
+logger = logging.getLogger("WorkDoAuto")
+logger.setLevel(logging.DEBUG)
+logger.propagate = False  # 防止重複冒泡至根 logger
+
+# 避免重複掛載 Handlers (例如模組重載或重複引用時)
+if not logger.handlers:
+    formatter = logging.Formatter(
+        fmt="[%(asctime)s] [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    # 1. 控制台輸出 (DEBUG 及以上)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    # 2. 本地滾動日誌 (5MB x 5 個備份，DEBUG 及以上)
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=5 * 1024 * 1024,
+        backupCount=5,
+        encoding="utf-8"
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # 3. Webhook 外部推播處理器 (預設 INFO 及以上，DEBUG 不推播)
+    webhook_handler = WebhookPushHandler(level=logging.INFO)
+    logger.addHandler(webhook_handler)
 
 
 def notify(title: str, message: str, level: int = logging.INFO) -> None:

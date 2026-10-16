@@ -115,7 +115,7 @@ class WorkDoClient:
 
         self.is_logged_in = True
         user_name = body.get("skyWebInfo", {}).get("dispUserNickname") or body.get("skyWebInfo", {}).get("name") or self.email
-        logger.info(f"使用者 {user_name} ({self.email}) 登入成功！(Tenant ID: {self.tenant_id})")
+        logger.debug(f"使用者 {user_name} ({self.email}) 登入成功！(Tenant ID: {self.tenant_id})")
         return body
 
     def ensure_logged_in(self) -> None:
@@ -178,12 +178,12 @@ class WorkDoClient:
         existing_time = status.get(clock_type)
 
         if existing_time and not force:
-            logger.info(f"今日已於 {existing_time} 完成 {clock_type} 打卡，跳過重複打卡。")
+            logger.debug(f"今日已於 {existing_time} 完成 {clock_type} 打卡，略過重複送出。")
             return {
                 "clock_type": clock_type,
                 "was_punched": False,
                 "punch_time": existing_time,
-                "message": f"今日已於 {existing_time} 完成打卡，略過送出。"
+                "message": f"今日已於 {existing_time} 完成打卡，略過重複打卡。"
             }
 
         # Step 2: Send punch request
@@ -197,7 +197,7 @@ class WorkDoClient:
             "gpsPlace": Config.GPS_PLACE
         }
 
-        logger.info(
+        logger.debug(
             f"正在發送 {clock_type} 打卡請求: 地點={Config.GPS_PLACE}, GPS={Config.GPS_LOCATION}"
         )
 
@@ -225,7 +225,7 @@ class WorkDoClient:
         if not verified_time:
             raise WorkDoError(f"{clock_type} 打卡已送出，但 WorkDo 紀錄未更新，請登入檢查。")
 
-        logger.info(f"{clock_type} 打卡成功！紀錄時間: {verified_time}")
+        logger.debug(f"{clock_type} 驗證成功，紀錄時間: {verified_time}")
         return {
             "clock_type": clock_type,
             "was_punched": True,
@@ -262,7 +262,7 @@ class WorkDoClient:
         if not missing_records:
             return 0
 
-        logger.info(f"偵測到 {len(missing_records)} 筆缺卡紀錄，正在自動補送...")
+        logger.debug(f"偵測到 {len(missing_records)} 筆缺卡紀錄，正在自動補送...")
         supplemented = 0
 
         save_headers = dict(headers)
@@ -308,9 +308,12 @@ class WorkDoClient:
                 sub_resp = self.session.post(self.URL_MISSING_PUNCH_SAVE, headers=save_headers, json=payload, timeout=20)
                 sub_resp.raise_for_status()
                 supplemented += 1
-                logger.info(f"成功補送缺卡: 日期={punch_day}, 類型={r_type}, 時間={req_time}")
+                logger.debug(f"成功補送缺卡: 日期={punch_day}, 類型={r_type}, 時間={req_time}")
             except Exception as e:
                 logger.warning(f"補送缺卡紀錄失敗 (日期={punch_day}): {e}")
+
+        if supplemented > 0:
+            logger.info(f"缺卡自動補登完成：共成功補送 {supplemented} 筆缺卡紀錄。")
 
         return supplemented
 
@@ -371,7 +374,7 @@ class WorkDoClient:
                     holidays.add(curr.strftime("%Y-%m-%d"))
                     curr += timedelta(days=1)
 
-            logger.info(f"成功自行事曆讀取 {len(holidays)} 個國定假日/休假日期。")
+            logger.debug(f"成功自行事曆讀取 {len(holidays)} 個國定假日/休假日期。")
         except Exception as e:
             logger.warning(f"讀取國定假日行事曆失敗: {e}")
 
@@ -395,14 +398,14 @@ class WorkDoClient:
 
         iso_weekday = target_date.isoweekday()
         if iso_weekday not in Config.WORKDAYS:
-            logger.info(f"日期 {target_date} (星期 {iso_weekday}) 不在設定之工作日 {Config.WORKDAYS} 內。")
+            logger.debug(f"日期 {target_date} (星期 {iso_weekday}) 不在設定之工作日 {Config.WORKDAYS} 內。")
             return False
 
         if Config.ENABLE_HOLIDAY_CHECK:
             holidays = self.fetch_holidays()
             date_str = target_date.strftime("%Y-%m-%d")
             if date_str in holidays:
-                logger.info(f"日期 {target_date} 為行事曆休假/國定假日。")
+                logger.debug(f"日期 {target_date} 為行事曆休假/國定假日。")
                 return False
 
         return True
