@@ -105,5 +105,57 @@ class TestWorkDoClient(unittest.TestCase):
             # 2026-10-11 is Sunday (iso weekday 7)
             self.assertFalse(self.client.is_workday(date(2026, 10, 11)))
 
+    def test_fetch_holidays_ignores_company_events_and_trainings(self):
+        mock_ical = """
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//WorkDo//Calendar//EN
+BEGIN:VEVENT
+SUMMARY:職場霸凌的法律選擇、申訴流程與自保指南 Legal Options
+UID:Event-DD1B75BA3A2FFC83C40C45A0964B38FC39D4E9020019673AD010AE0F2C1E6F88
+DESCRIPTION:[Zealogics Taiwan][Event]\n為提升同仁對職場霸凌相關議題的認識
+DTSTART:20261020T023000Z
+DTEND:20261020T040000Z
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:2026 Team building #2
+UID:Event-AA69A77E1CEE022552DFDF6A9B67AF20B1537845966FEBADC9601F6EA3E4DDE6
+DESCRIPTION:[120-C# Team-Hsinchu][Event]\n11:30 - 15:00 饗 A Joy
+DTSTART:20261123T033000Z
+DTEND:20261123T070000Z
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:國慶
+UID:HumanResource-jU4SxGuAq0A
+DESCRIPTION:[Zealogics Taiwan][Human Resource]
+DTSTART;VALUE=DATE:20261010
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:補假
+UID:HumanResource-cwbNNa8W56g
+DESCRIPTION:[Zealogics Taiwan][Human Resource]\n補 10-10
+DTSTART;VALUE=DATE:20261009
+END:VEVENT
+END:VCALENDAR
+"""
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = mock_ical
+        with patch.object(self.client.session, "get", return_value=mock_resp), \
+             patch.object(Config, "HOLIDAY_CALENDAR_URL", "https://example.com/cal.ics"):
+            self.client._holidays_cache = None
+            holidays = self.client.fetch_holidays()
+
+            # Real holidays must be present
+            self.assertIn("2026-10-10", holidays)
+            self.assertIn("2026-10-09", holidays)
+
+            # Meeting and training events must NOT be marked as holidays!
+            self.assertNotIn("2026-10-20", holidays)
+            self.assertNotIn("2026-11-23", holidays)
+
+            # 2026-10-20 must be recognized as a workday
+            self.assertTrue(self.client.is_workday(date(2026, 10, 20)))
+
 if __name__ == "__main__":
     unittest.main()

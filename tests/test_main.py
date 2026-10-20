@@ -65,6 +65,7 @@ class TestMain(unittest.TestCase):
     def test_handle_punch_out_success(self):
         args = argparse.Namespace(force=True, flexible=False)
         with patch.object(Config, "validate_credentials"), \
+             patch.object(Config, "ENABLE_FLEXIBLE_CLOCK_OUT", False), \
              patch("workdo_client.WorkDoClient.login"), \
              patch("workdo_client.WorkDoClient.supplement_missing_punches"), \
              patch("workdo_client.WorkDoClient.query_punch_status", return_value={"ClockIn": "09:00", "ClockOut": None}), \

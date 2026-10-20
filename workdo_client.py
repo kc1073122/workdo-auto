@@ -341,7 +341,19 @@ class WorkDoClient:
             events = re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", content, re.DOTALL)
 
             for ev in events:
-                if "Monthly Step-Up Challenge" in ev:
+                # 排除公司活動、教育訓練、團隊聚餐等非休假行事曆項目
+                if "[Event]" in ev or "Event-" in ev or "Monthly Step-Up Challenge" in ev:
+                    continue
+
+                # 僅納入人事休假公告 [Human Resource] 或國定假日/休假/補假
+                m_desc = re.search(r"DESCRIPTION:(.*)", ev)
+                desc = m_desc.group(1) if m_desc else ""
+                m_sum = re.search(r"SUMMARY:(.*)", ev)
+                summary = m_sum.group(1) if m_sum else ""
+
+                is_hr_leave = "[Human Resource]" in desc
+                has_holiday_keyword = any(k in summary for k in ["休", "假", "節", "年", "紀念日", "國慶", "元旦", "228"])
+                if not (is_hr_leave or has_holiday_keyword):
                     continue
 
                 m_start = re.search(r"DTSTART(?:;[^:]*)?:(\d{8}(?:T\d{6}Z?)?)", ev)
