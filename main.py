@@ -108,8 +108,12 @@ def handle_status(args: argparse.Namespace) -> int:
         print(f"設定下班時間: {Config.CLOCK_OUT_TIME} (彈性下班: {'已啟用' if Config.ENABLE_FLEXIBLE_CLOCK_OUT else '未啟用'})")
         print(f"GPS 打卡點:   {Config.GPS_PLACE} ({Config.GPS_LOCATION})")
         print("-" * 48)
-        print(f"今日上班卡:   {status.get('ClockIn') or '尚未打卡'}")
-        print(f"今日下班卡:   {status.get('ClockOut') or '尚未打卡'}")
+        in_res = status.get("ClockInResult")
+        out_res = status.get("ClockOutResult")
+        in_display = f"請假 ({in_res})" if str(in_res).lower() == "leave" else (status.get('ClockIn') or '尚未打卡')
+        out_display = f"請假 ({out_res})" if str(out_res).lower() == "leave" else (status.get('ClockOut') or '尚未打卡')
+        print(f"今日上班卡:   {in_display}")
+        print(f"今日下班卡:   {out_display}")
         print("=" * 48 + "\n")
         return 0
     except Exception as e:

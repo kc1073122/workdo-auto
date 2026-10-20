@@ -1,5 +1,6 @@
 """WorkDo API Client."""
 
+import os
 import re
 import json
 from datetime import datetime, date, timedelta
@@ -135,11 +136,16 @@ class WorkDoClient:
             "Content-Type": "application/json;charset=UTF-8",
         }
 
-    def query_punch_status(self) -> Dict[str, Optional[str]]:
+    def query_punch_status(self) -> Dict[str, Any]:
         """
-        Query today's punch status from WorkDo server.
+        Query today's punch status and leave state from WorkDo server.
         Returns:
-            {"ClockIn": "YYYY-MM-DD HH:MM:SS+0800" or None, "ClockOut": ... or None}
+            {
+                "ClockIn": "YYYY-MM-DD HH:MM:SS+0800" or None,
+                "ClockOut": ... or None,
+                "ClockInResult": "NotYet" | "Leave" | "OuterOnTime" | "OnTime" | None,
+                "ClockOutResult": ...
+            }
         """
         self.ensure_logged_in()
         headers = self._get_api_headers()
@@ -151,14 +157,21 @@ class WorkDoClient:
         except Exception as e:
             raise WorkDoError(f"查詢今日打卡狀態失敗: {e}")
 
-        result: Dict[str, Optional[str]] = {"ClockIn": None, "ClockOut": None}
+        result: Dict[str, Any] = {
+            "ClockIn": None,
+            "ClockOut": None,
+            "ClockInResult": None,
+            "ClockOutResult": None,
+        }
         records = data.get("list") or []
 
         for item in records:
             p_type = item.get("type")
             p_time = item.get("punchTime")
-            if p_type in result:
+            p_res = item.get("result")
+            if p_type in ("ClockIn", "ClockOut"):
                 result[p_type] = p_time if p_time else None
+                result[f"{p_type}Result"] = p_res
 
         return result
 
@@ -173,9 +186,21 @@ class WorkDoClient:
         """
         self.ensure_logged_in()
 
-        # Step 1: Check existing punch status
+        # Step 1: Check existing punch status and leave state
         status = self.query_punch_status()
         existing_time = status.get(clock_type)
+        punch_result = status.get(f"{clock_type}Result")
+
+        # 自動防呆：若 WorkDo 系統標記今日為請假 (Leave)，自動跳過打卡
+        if not force and str(punch_result).lower() == "leave":
+            logger.info(f"偵測到 WorkDo 系統已核准請假 (狀態: {punch_result})，自動跳過 {clock_type} 打卡！")
+            return {
+                "clock_type": clock_type,
+                "was_punched": False,
+                "is_leave": True,
+                "punch_time": None,
+                "message": f"今日已請假 (WorkDo 狀態: {punch_result})，自動略過打卡。"
+            }
 
         if existing_time and not force:
             logger.debug(f"今日已於 {existing_time} 完成 {clock_type} 打卡，略過重複送出。")
@@ -419,5 +444,18 @@ class WorkDoClient:
             if date_str in holidays:
                 logger.debug(f"日期 {target_date} 為行事曆休假/國定假日。")
                 return False
+
+        # 3. 檢查本地自訂請假清單 (leaves.txt)
+        date_str = target_date.strftime("%Y-%m-%d")
+        leave_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "leaves.txt")
+        if os.path.exists(leave_file):
+            try:
+                with open(leave_file, "r", encoding="utf-8") as f:
+                    custom_leaves = {line.strip() for line in f if line.strip() and not line.startswith("#")}
+                if date_str in custom_leaves:
+                    logger.info(f"日期 {target_date} 在自訂請假清單 (leaves.txt) 中，判定為休假，略過打卡。")
+                    return False
+            except Exception as e:
+                logger.warning(f"讀取自訂請假清單 leaves.txt 失敗: {e}")
 
         return True

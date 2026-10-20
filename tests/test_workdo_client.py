@@ -73,6 +73,18 @@ class TestWorkDoClient(unittest.TestCase):
             self.assertEqual(res["punch_time"], "2026-10-14 09:00:00+0800")
             mock_post.assert_not_called()
 
+    def test_punch_on_approved_leave_skipped(self):
+        """If WorkDo marks today as Leave, punch is skipped automatically to prevent wrongful punch."""
+        self.client.is_logged_in = True
+        with patch.object(self.client, "query_punch_status", return_value={"ClockIn": None, "ClockOut": None, "ClockInResult": "Leave", "ClockOutResult": "Leave"}), \
+             patch.object(self.client.session, "post") as mock_post:
+
+            res = self.client.punch_with_validation("ClockIn", force=False)
+            self.assertFalse(res["was_punched"])
+            self.assertTrue(res.get("is_leave"))
+            self.assertIn("今日已請假", res["message"])
+            mock_post.assert_not_called()
+
     def test_punch_verbatim_server_error(self):
         """API error must be captured verbatim without translation."""
         self.client.is_logged_in = True

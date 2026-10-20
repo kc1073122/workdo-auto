@@ -53,18 +53,18 @@ workdo-auto/
 
 ---
 
-## 🚀 部署至樹莓派 (192.168.68.65)
+## 🚀 部署至樹莓派
 
-在本地端（Mac）的 `~/Documents/codes/workdo-auto` 目錄下執行：
+clone repo 然後在 `workdo-auto` 目錄下執行：
 
 ```bash
 chmod +x deploy.sh setup_systemd.sh main.py
-./deploy.sh 192.168.68.65 bot
+./deploy.sh [your_raspberttypi_ip] [your_raspberrypi_username]
 ```
 
 部署程式將會：
 1. 透過 SSH 檢查樹莓派連線
-2. 同步程式碼至 `/home/bot/workdo-auto`
+2. 同步程式碼至 `/home/[your_raspberrypi_username]/workdo-auto`
 3. 在樹莓派上建立專屬 Python 虛擬環境 (`venv`) 並安裝依賴套件
 4. 自動配置工作日 `09:00` 上班與 `18:00` 下班的 **Systemd Timers** 定時器排程
 
@@ -75,7 +75,7 @@ chmod +x deploy.sh setup_systemd.sh main.py
 連線至樹莓派編輯設定檔：
 
 ```bash
-ssh bot@192.168.68.65
+ssh [your_raspberrypi_username]@[your_respberrypi_ip]
 cd ~/workdo-auto
 nano .env
 ```
